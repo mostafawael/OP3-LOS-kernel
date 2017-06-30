@@ -20,32 +20,27 @@ KERNEL="Image.gz-dtb"
 DEFCONFIG="lineageos_oneplus3_defconfig"
 
 # Kernel Details
-VER=Render-Kernel
-VARIANT="OP3-LOS-N-EAS"
+VER=v001
+VARIANT="HelixKernel-OP3"
 
 # Vars
 export LOCALVERSION=~`echo $VER`
 export ARCH=arm64
 export SUBARCH=arm64
-export KBUILD_BUILD_USER=RenderBroken
-export KBUILD_BUILD_HOST=RenderServer.net
+export KBUILD_BUILD_USER=MostafaWael
+export KBUILD_BUILD_HOST=TeamHelix
 export CCACHE=ccache
+export TOOLCHAIN=${HOME}/Documents/toolchains/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 
 # Paths
 KERNEL_DIR=`pwd`
-REPACK_DIR="${HOME}/android/source/kernel/AnyKernel2"
-PATCH_DIR="${HOME}/android/source/kernel/AnyKernel2/patch"
-MODULES_DIR="${HOME}/android/source/kernel/AnyKernel2/modules"
-ZIP_MOVE="${HOME}/android/source/zips/OP3-zips"
-ZIMAGE_DIR="${HOME}/android/source/kernel/OP3-LOS-kernel/arch/arm64/boot"
+REPACK_DIR="${HOME}/Documents/anykernel2"
+PATCH_DIR="${HOME}/Documents/anykernel2/patch"
+MODULES_DIR="${HOME}/Documents/anykernel2/modules"
+ZIP_MOVE="${HOME}/Documents/kernel-builds"
+ZIMAGE_DIR="${HOME}/Documents/OP3-LOS-kernel/arch/arm64/boot"
 
 # Functions
-function checkout_ak_branches {
-		cd $REPACK_DIR
-		git checkout rk-op3-los-n
-		cd $KERNEL_DIR
-}
-
 function clean_all {
 		cd $REPACK_DIR
 		rm -rf $MODULES_DIR/*
@@ -59,8 +54,8 @@ function clean_all {
 
 function make_kernel {
 		echo
-		make $DEFCONFIG
-		make $THREAD
+		make ARCH=arm64 CROSS_COMPILE=$TOOLCHAIN $DEFCONFIG
+		make ARCH=arm64 CROSS_COMPILE=$TOOLCHAIN $THREAD
 		cp -vr $ZIMAGE_DIR/$KERNEL $REPACK_DIR/zImage
 }
 
@@ -69,14 +64,10 @@ function make_modules {
 		find $KERNEL_DIR -name '*.ko' -exec cp -v {} $MODULES_DIR \;
 }
 
-function make_dtb {
-		$REPACK_DIR/tools/dtbToolCM -2 -o $REPACK_DIR/$DTBIMAGE -s 2048 -p scripts/dtc/ arch/arm64/boot/
-}
-
 function make_zip {
 		cd $REPACK_DIR
-		zip -r9 RenderKernel-"$VARIANT"-R.zip *
-		mv RenderKernel-"$VARIANT"-R.zip $ZIP_MOVE
+		zip -r9 "$VARIANT"-"$VER".zip *
+		mv "$VARIANT"-"$VER".zip $ZIP_MOVE
 		cd $KERNEL_DIR
 }
 
@@ -84,33 +75,13 @@ function make_zip {
 DATE_START=$(date +"%s")
 
 echo -e "${green}"
-echo "Render Kernel Creation Script:"
+echo "Helix Kernel Creation Script:"
 echo -e "${restore}"
-
-echo "Pick Toolchain..."
-select choice in LINARO-aarch64-linux-gnu-4.9.3-05012016 LINARO-aarch64-linux-gnu-5.3.1-05012016 HYPER-aarch64-6.x-10032016 LINARO-aarch64-linux-gnu-6.3.1-052017
-do
-case "$choice" in
-	"LINARO-aarch64-linux-gnu-4.9.3-05012016")
-		export CROSS_COMPILE=${HOME}/android/source/toolchains/LINARO-aarch64-linux-gnu-4.9.3-05012016/bin/aarch64-linux-gnu-
-		break;;
-	"LINARO-aarch64-linux-gnu-5.3.1-05012016")
-		export CROSS_COMPILE=${HOME}/android/source/toolchains/LINARO-aarch64-linux-gnu-5.3.1-05012016/bin/aarch64-linux-gnu-
-		break;;
-	"HYPER-aarch64-6.x-10032016")
-		export CROSS_COMPILE=${HOME}/android/source/toolchains/HYPER-aarch64-6.x-10032016/bin/aarch64-linux-android-
-		break;;
-	"LINARO-aarch64-linux-gnu-6.3.1-052017")
-		export CROSS_COMPILE=${HOME}/android/source/toolchains/LINARO-aarch64-linux-gnu-6.3.1-052017/bin/aarch64-linux-gnu-
-		break;;
-esac
-done
 
 while read -p "Do you want to clean stuffs (y/n)? " cchoice
 do
 case "$cchoice" in
 	y|Y )
-		checkout_ak_branches
 		clean_all
 		echo
 		echo "All Cleaned now."
@@ -133,7 +104,6 @@ while read -p "Do you want to build kernel (y/n)? " dchoice
 do
 case "$dchoice" in
 	y|Y)
-		checkout_ak_branches
 		make_kernel
 		make_modules
 		make_zip
